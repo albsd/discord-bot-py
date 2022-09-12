@@ -19,7 +19,7 @@ class game:
         self.player2 = player2
         self.p1score = p1score
         self.p2score = p2score
-    
+
 games = []
 
 @bot.event
@@ -46,10 +46,8 @@ async def rps(ctx: interactions.CommandContext):
     )
     action_row = ActionRow(components = [sp_button, mp_button])
     await ctx.send("Choose a game option!", components = action_row)
-    
 
-@bot.component("sp")
-async def primary_component(ctx: interactions.ComponentContext):
+def game_options():
     rock_button = Button(
         style = 1,
         custom_id = "rock",
@@ -66,12 +64,16 @@ async def primary_component(ctx: interactions.ComponentContext):
         label = "Scissors!"
     )
     quit_button = Button(
-        style = 1,
+        style = 4,
         custom_id = "quit",
         label = "Quit"
     )
 
-    action_row = ActionRow(components = [rock_button, paper_button, scissors_button, quit_button])
+    return ActionRow(components = [rock_button, paper_button, scissors_button, quit_button])  
+
+@bot.component("sp")
+async def primary_component(ctx: interactions.ComponentContext):
+    action_row = game_options()
 
     await ctx.edit("Rock, paper, scissors!", components = action_row)
 
@@ -120,7 +122,30 @@ async def primary_component(ctx: interactions.ComponentContext):
         label = "Join"
     )
     action_row = ActionRow(components = [join_button])
-    await ctx.edit(f"This lobby was started by {ctx.author.mention}...", content = [action_row])
+    game_msg = await ctx.edit(f"This lobby was started by {ctx.author.mention}...", components = [action_row])
+    player1 = ctx.author
+    @bot.component("join")
+    async def success_container(ctx: interactions.CommandContext):
+        if(player1 == ctx.author):
+            await ctx.send("You have already joined the game!", ephemeral = True)
+        else:
+            await ctx.send("You have successfully joined the game!", ephemeral = True)
+            player2 = ctx.author
+            
+            await game_msg.edit("Rock, paper, scissors!", components = game_options())
+
+            @bot.component("quit")
+            async def danger_component(ctx: interactions.CommandContext):
+                if(ctx.author != player1 and ctx.author != player2):
+                    ctx.send("You cannot quit other people's games!", ephemeral = True)
+                else:
+                    await game_msg.edit("Game over!", components = [])
+        
+
+    await game_msg.edit()
+
+
+
 
 
 @bot.command()
