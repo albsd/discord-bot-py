@@ -1,4 +1,3 @@
-import asyncio
 import random
 import interactions
 from interactions import Button, ActionRow
@@ -127,6 +126,7 @@ async def primary_component(ctx: interactions.ComponentContext):
 @bot.command()
 @is_owner()
 async def shutdown(ctx):
+    await ctx.send("Shutting bot down ... :(")
     exit()
 
     
