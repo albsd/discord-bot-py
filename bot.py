@@ -23,27 +23,29 @@ class game:
 
 
 class round:
-    def __init__(self, player1, player2):
+    def __init__(self, player1, player2, p1_option = "", p2_option = ""):
         self.player1 = player1
         self.player2 = player2
+        self.p1_option = p1_option
+        self.p2_option = p2_option
 
-    p1_option = ""   # 0 - none, 1 - rock, 2 - paper, 3 - scissors
-    p2_option = ""
+    # p1_option = ""   # 0 - none, 1 - rock, 2 - paper, 3 - scissors
+    # p2_option = ""
 
     def choose(self, player, option):    # 0 - not ready yet, 1 - player1 wins, 2 - player2 wins, 3 - tie
         if(player == self.player1):
-            p1_option = option
+            self.p1_option = option
         else:
-            p2_option = option
+            self.p2_option = option
 
-        if(p1_option != "" and p2_option != ""):
-            if(p1_option == p2_option): 
+        if(self.p1_option != "" and self.p2_option != ""):
+            if(self.p1_option == self.p2_option): 
                 return 3
-            if(p1_option == "paper" and p2_option == "scissors"):
+            if(self.p1_option == "paper" and self.p2_option == "scissors"):
                 return 2
-            if(p1_option == "scissors" and p2_option == "paper"):
+            if(self.p1_option == "scissors" and self.p2_option == "paper"):
                 return 1
-            if(p1_option < p2_option):
+            if(self.p1_option < self.p2_option):
                 return 1
             else:
                 return 2
@@ -168,7 +170,7 @@ async def primary_component(ctx: interactions.ComponentContext):
         else:
             if(rounds[r_index].player2 == 0):
                 rounds[r_index].player2 = ctx.author
-                if(rounds[r_index].player2.name != rounds[r_index].player1.name and rounds[r_index].player2.discriminator != rounds[r_index].player1.discriminator):
+                if(rounds[r_index].player1.id != rounds[r_index].player2.id):
                     print(rounds[r_index].player1, " ", rounds[r_index].player2, "\n")
                     await ctx.send("You have successfully joined the game!", ephemeral = True)
                 else:
@@ -186,18 +188,20 @@ async def primary_component(ctx: interactions.ComponentContext):
             async def end_game(player1, player2, result, game_msg):
                 if(result > 0):
                     global r_index
-                    r_index = r_index + 1
                     if(result == 1):
-                        game_msg.edit(f"The winner is {player1.mention} . . .\n{player1.mention} chose {rounds[r_index].p1_option} and {player2.mention} chose {rounds[r_index].p2_option}.", components = [])
+                        await game_msg.edit(f"The winner is {player1.mention} . . .\n{player1.mention} chose {rounds[r_index].p1_option} and {player2.mention} chose {rounds[r_index].p2_option}.", components = [])
                     if(result == 2):
-                        game_msg.edit(f"The winner is {player2.mention} . . .\n{player1.mention} chose {rounds[r_index].p1_option} and {player2.mention} chose {rounds[r_index].p2_option}.", components = [])   
+                        await game_msg.edit(f"The winner is {player2.mention} . . .\n{player1.mention} chose {rounds[r_index].p1_option} and {player2.mention} chose {rounds[r_index].p2_option}.", components = [])   
                     if(result == 3):
                         await game_msg.edit(f"The game is a tie! Nobody wins . . .\nBoth players chose {rounds[r_index].p1_option}.") 
+                    r_index = r_index + 1
 
             @bot.component("quit")
             async def danger_component(ctx: interactions.CommandContext):
-                if(ctx.author != rounds[r_index].player1 and ctx.author != rounds[r_index].player2):
-                    await ctx.send("You cannot quit other people's games!", ephemeral = True)
+                global rounds
+                global r_index
+                if(ctx.author.id != rounds[r_index].player1.id and ctx.author.id != rounds[r_index].player2.id):
+                    await ctx.send("You are not part of this game!", ephemeral = True)
                 else:
                     await game_msg.edit("Game over!", components = [])
 
@@ -205,31 +209,33 @@ async def primary_component(ctx: interactions.ComponentContext):
 
             @bot.component("rock")
             async def primary_component(ctx: interactions.CommandContext):
-                if((ctx.author == rounds[r_index].player1 and rounds[r_index].p1_option != 0) or (ctx.author == rounds[r_index].player2 and rounds[r_index].p2_option != 0)):
-                    await ctx.send("You have already made your decision!", ephemeral = True)
+                global rounds
+                global r_index
+                if(ctx.author.id != rounds[r_index].player1.id and ctx.author.id != rounds[r_index].player2.id):
+                    await ctx.send("You are not part of this game!", ephemeral = True)
                 else:
-                    result = rounds[r_index].choose(ctx.author, 1)
-                    end_game(rounds[r_index].player1, rounds[r_index].player2, result, game_msg)
+                    result = rounds[r_index].choose(ctx.author, "rock")
+                    await end_game(rounds[r_index].player1, rounds[r_index].player2, result, game_msg)
             
             @bot.component("paper")
             async def primary_component(ctx: interactions.CommandContext):
-                if((ctx.author == rounds[r_index].player1 and rounds[r_index].p1_option != 0) or (ctx.author == rounds[r_index].player2 and rounds[r_index].p2_option != 0)):
-                    await ctx.send("You have already made your decision!", ephemeral = True)
+                global rounds
+                global r_index
+                if(ctx.author.id != rounds[r_index].player1.id and ctx.author.id != rounds[r_index].player2.id):
+                    await ctx.send("You are not part of this game!", ephemeral = True)
                 else:
-                    result = rounds[r_index].choose(ctx.author, 2)
-                    end_game(rounds[r_index].player1, rounds[r_index].player2, result, game_msg)
+                    result = rounds[r_index].choose(ctx.author, "paper")
+                    await end_game(rounds[r_index].player1, rounds[r_index].player2, result, game_msg)
 
             @bot.component("scissors")
             async def primary_component(ctx: interactions.CommandContext):
-                if((ctx.author == rounds[r_index].player1 and rounds[r_index].p1_option != 0) or (ctx.author == rounds[r_index].player2 and rounds[r_index].p2_option != 0)):
-                    await ctx.send("You have already made your decision!", ephemeral = True)
+                global rounds
+                global r_index
+                if(ctx.author.id != rounds[r_index].player1.id and ctx.author.id != rounds[r_index].player2.id):
+                    await ctx.send("You are not part of this game!", ephemeral = True)
                 else:
-                    result = rounds[r_index].choose(ctx.author, 3)
-                    end_game(rounds[r_index].player1, rounds[r_index].player2, result, game_msg)
-
-
-
-        
+                    result = rounds[r_index].choose(ctx.author, "scissors")
+                    await end_game(rounds[r_index].player1, rounds[r_index].player2, result, game_msg)
 
 
 
